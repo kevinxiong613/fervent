@@ -1,20 +1,18 @@
 import discord
 from discord import Intents
+from discord.ext import commands
 from run import run
 
-perms = Intents(messages=True)
-client = discord.Client(intents=perms) # Set the permissions that this bot will have, right now only need it to send messages
+bot = commands.Bot(command_prefix="!", intents = Intents.all()) # Set the permissions that this bot will have, right now only need it to send messages
 
-@client.event
+@bot.event
 async def on_ready():
-    print('Logged in as {0.user}'.format(client))
+    print('Logged in as {0.user}'.format(bot))
 
-@client.event
+@bot.event
 async def on_message(message):
-    if message.author == client.user:
+    if message.author == bot.user: # Don't let the bot respond to itself
         return
-
-    if message.content.startswith('$hello'):
-        await message.channel.send('Hello!')
-
-run(client)
+    if "hello" in message.content: 
+        await message.reply("yo") # Directly reply to the author instead
+run(bot)
