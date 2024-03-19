@@ -41,7 +41,7 @@ async def on_message(message):
         return
     
     print(time.time())
-    if time.time() - previous_time < 10: # Not enough time has elapsed to send another image. Send an image every 50 seconds
+    if time.time() - previous_time < 2: # Not enough time has elapsed to send another image. Send an image every 50 seconds
         return
     previous_time = time.time() # Otherwise we can record the current time again and send the sentiment image
     data = [message.content] # Put message contents in a list as the only item
