@@ -90,17 +90,29 @@ async def on_message(message):
     data = [message.content] # Put message contents in a list as the only item
     prediction = sentiment_pipeline(data)
     if prediction[0]['label'] == 'positive': # Set conditions to check what the prediction is
-        await message.reply("positive prediction") # Directly reply to the author instead
-    elif prediction[0]['label'] == 'negative': # If negative...
         try:
-            response = s3.get_object(Bucket=getBucketName(), Key=f"{message.guild.id}/{'negative'}.jpg") # Retrieve a response from s3
+            response = s3.get_object(Bucket=getBucketName(), Key=f"{message.guild.id}/{'positive'}.jpg") # Retrieve a response from s3 for the positive stored image
             print(response)
             image_data = response['Body'].read() # Get the image data from the response body
-            await message.reply(file=discord.File(io.BytesIO(image_data), filename='negative_image.png')) # Process the image data to be sent back
+            await message.reply(file=discord.File(io.BytesIO(image_data), filename='positive_image.png')) # Process the image data to be sent back
         except Exception as e: # Error occured with retrieving the image
             print(f"Error retrieving image from S3: {e}")
             # Don't print anything in this case, typically means an image hasn't been uploaded for this sentiment yet
+    elif prediction[0]['label'] == 'negative': # If negative...
+        try:
+            response = s3.get_object(Bucket=getBucketName(), Key=f"{message.guild.id}/{'negative'}.jpg")
+            print(response)
+            image_data = response['Body'].read() # Get the image data from the response body
+            await message.reply(file=discord.File(io.BytesIO(image_data), filename='negative_image.png'))
+        except Exception as e:
+            print(f"Error retrieving image from S3: {e}")
     else:
-        await message.reply("neutral prediction")
+        try:
+            response = s3.get_object(Bucket=getBucketName(), Key=f"{message.guild.id}/{'neutral'}.jpg")
+            print(response)
+            image_data = response['Body'].read() # Get the image data from the response body
+            await message.reply(file=discord.File(io.BytesIO(image_data), filename='neutral_image.png'))
+        except Exception as e:
+            print(f"Error retrieving image from S3: {e}")
     
 run(bot)
