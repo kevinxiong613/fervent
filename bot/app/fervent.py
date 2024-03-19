@@ -1,3 +1,5 @@
+import io
+import discord
 from discord import Intents
 from discord.ext import commands
 from run import run, getBucketName, getKeys
@@ -11,7 +13,7 @@ import requests
 bot = commands.Bot(command_prefix="!", intents = Intents.all()) # Set the permissions that this bot will have, right now only need it to send messages
 sentiment_pipeline = pipeline(model="cardiffnlp/twitter-roberta-base-sentiment-latest") # Utilize roBERTa which was fine tuned on Twitter data
 previous_time = 0 # Keep track of how much time it has been since this bot has last sent an image
-names = dict()
+sentiment_names = dict()
 
 # Set up S3 client
 ACCESS_KEY, SECRET_KEY = getKeys()
@@ -34,7 +36,8 @@ def upload_image_to_s3(image_url, sentiment):
             # Upload file to S3 bucket
             object_key = f"{sentiment}/{os.path.basename(image_url)}"
             s3.upload_file('app/temp_image.jpg', getBucketName(), object_key)
-            names[sentiment] = object_key # Save the sentiment's URL for message use later!
+            sentiment_names[sentiment] = object_key # Save the sentiment's URL for message use later!
+            print(sentiment_names)
             # Generate presigned URL for the uploaded file
 
             file_url = s3.generate_presigned_url('get_object', Params={'Bucket': getBucketName(), 'Key': object_key}) # Get the presigned URL
@@ -79,7 +82,6 @@ async def on_message(message):
         await bot.process_commands(message)
         return
     
-    print(time.time())
     if time.time() - previous_time < 2: # Not enough time has elapsed to send another image. Send an image every 50 seconds
         return
     previous_time = time.time() # Otherwise we can record the current time again and send the sentiment image
@@ -88,8 +90,14 @@ async def on_message(message):
     if prediction[0]['label'] == 'positive': # Set conditions to check what the prediction is
         await message.reply("positive prediction") # Directly reply to the author instead
     elif prediction[0]['label'] == 'negative':
-        s3.get_object(Bucket=getBucketName(), Key='your-object-key')
-        await message.reply("negative prediction")
+        try:
+            response = s3.get_object(Bucket=getBucketName(), Key=sentiment_names['negative'])
+            print(response)
+            image_data = response['Body'].read()
+            await message.reply("negative prediction", file=discord.File(io.BytesIO(image_data), filename='negative_image.png'))
+        except Exception as e: # Error occured with retrieving the image
+            print(f"Error retrieving image from S3: {e}")
+            await message.reply("Error retrieving image.")
     else:
         await message.reply("neutral prediction")
     
