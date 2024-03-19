@@ -23,6 +23,6 @@ CMD ["python", "fervent.py"]
 
 # docker images --> See all docker images
 
-# docker run --rm myapp -->  The command docker run --rm myapp runs a Docker container based on the Docker image named myapp, and the --rm flag ensures that the container is automatically removed when it exits.
+# docker run --rm myapp -->  The command docker run --rm myapp runs a Docker container based on the Docker image named myapp, and the --rm flag ensures that the container is automatically removed when it exits. T
 
 
