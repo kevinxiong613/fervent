@@ -33,9 +33,14 @@ def upload_image_to_s3(guild_id, image_url, sentiment):
                 f.write(response.content)
 
             # Upload file to S3 bucket
-            object_key = f"{guild_id}/{sentiment}/{sentiment}.jpg" # Generate an object_key to query from s3 later of the form discord_server_id/sentiment/sentiment.jpg
+            object_key = f"{guild_id}/{sentiment}.jpg" # Generate an object_key to query from s3 later of the form discord_server_id/sentiment/sentiment.jpg
+            s3.delete_object(Bucket=getBucketName(), Key=object_key) # Deletes the previous picture used if it's already there
+
             s3.upload_file('app/temp_image.jpg', getBucketName(), object_key) # upload_file takes in 1. file path 2. Bucket name 3. Object key to query
             # Generate presigned URL for the uploaded file
+
+            # Delete the local image file after upload
+            os.remove('app/temp_image.jpg')
 
             file_url = s3.generate_presigned_url('get_object', Params={'Bucket': getBucketName(), 'Key': object_key}) # Get the presigned URL
             return file_url
@@ -86,12 +91,12 @@ async def on_message(message):
     prediction = sentiment_pipeline(data)
     if prediction[0]['label'] == 'positive': # Set conditions to check what the prediction is
         await message.reply("positive prediction") # Directly reply to the author instead
-    elif prediction[0]['label'] == 'negative':
+    elif prediction[0]['label'] == 'negative': # If negative...
         try:
-            response = s3.get_object(Bucket=getBucketName(), Key=f"{message.guild.id}/{'negative'}/{'negative'}.jpg")
+            response = s3.get_object(Bucket=getBucketName(), Key=f"{message.guild.id}/{'negative'}.jpg") # Retrieve a response from s3
             print(response)
-            image_data = response['Body'].read()
-            await message.reply(file=discord.File(io.BytesIO(image_data), filename='negative_image.png'))
+            image_data = response['Body'].read() # Get the image data from the response body
+            await message.reply(file=discord.File(io.BytesIO(image_data), filename='negative_image.png')) # Process the image data to be sent back
         except Exception as e: # Error occured with retrieving the image
             print(f"Error retrieving image from S3: {e}")
             # Don't print anything in this case, typically means an image hasn't been uploaded for this sentiment yet
