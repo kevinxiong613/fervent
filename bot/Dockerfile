@@ -1,6 +1,5 @@
 # Use an official Python runtime as the base image, use slim for minimal packages
-FROM python:3.9-slim AS builder
-
+FROM python:3.9-slim
 # Set the working directory in the container to where the code itself is
 WORKDIR /app
 
@@ -16,21 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ .
 
 # Specify the command to run the application
-CMD ["python", "fervent.py"]
+CMD ["python3", "fervent.py"]
 
-
-# Stage 2: Final Stage
-# Final Stage
-FROM python:3.9-slim
-
-WORKDIR /app
-
-# Copy only necessary files from the builder stage
-COPY --from=builder /usr/local/lib/python3.9/site-packages/ /usr/local/lib/python3.9/site-packages/
-COPY --from=builder /app .
-
-# Specify the command to run the application
-CMD ["python", "fervent.py"]
 
 # ------------- Multistage build saving space ----------
 # Separation of Build and Runtime Dependencies: In a traditional Dockerfile, all dependencies required for building the application, such as compilers, development libraries, and build tools, are included in the final Docker image. However, these build-time dependencies are not needed at runtime and only add unnecessary bulk to the image.

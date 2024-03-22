@@ -1,3 +1,4 @@
 discord
 transformers
 torch
+boto3

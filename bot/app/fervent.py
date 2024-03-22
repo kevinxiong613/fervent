@@ -8,6 +8,7 @@ import time # Keep track of the time
 import boto3
 import os
 import requests
+from PIL import Image
 
 
 bot = commands.Bot(command_prefix="!", intents = Intents.all()) # Set the permissions that this bot will have, right now only need it to send messages
@@ -32,15 +33,32 @@ def upload_image_to_s3(guild_id, image_url, sentiment):
             with open('app/temp_image.jpg', 'wb') as f:
                 f.write(response.content)
 
+                # Open the image using Pillow
+            img = Image.open('app/temp_image.jpg')
+
+            # Define the target width that I will be scaling it down to
+            target_width = 300
+
+            # Calculate the aspect ratio and the new height
+            width, height = img.size # .size for Pillow returns a tuple with its dimensions
+            aspect_ratio = width / height
+            target_height = int(target_width / aspect_ratio) # Get the target height based off of the ratio calculated to scale the image dimensions
+
+            # Resize the image to a certain size based off the target_width
+            resized_img = img.resize((target_width, target_height))
+
+            # Save the resized image back to the file
+            resized_img.save('app/resized_temp_image.jpg')
+
             # Upload file to S3 bucket
             object_key = f"{guild_id}/{sentiment}.jpg" # Generate an object_key to query from s3 later of the form discord_server_id/sentiment/sentiment.jpg
             s3.delete_object(Bucket=getBucketName(), Key=object_key) # Deletes the previous picture used if it's already there
 
-            s3.upload_file('app/temp_image.jpg', getBucketName(), object_key) # upload_file takes in 1. file path 2. Bucket name 3. Object key to query
-            # Generate presigned URL for the uploaded file
+            s3.upload_file('app/resized_temp_image.jpg', getBucketName(), object_key) # upload_file takes in 1. file path 2. Bucket name 3. Object key to query
 
-            # Delete the local image file after upload
+            # Delete the local image files after upload
             os.remove('app/temp_image.jpg')
+            os.remove('app/resized_temp_image.jpg')
 
             file_url = s3.generate_presigned_url('get_object', Params={'Bucket': getBucketName(), 'Key': object_key}) # Get the presigned URL
             return file_url
@@ -92,7 +110,6 @@ async def on_message(message):
     if prediction[0]['label'] == 'positive': # Set conditions to check what the prediction is
         try:
             response = s3.get_object(Bucket=getBucketName(), Key=f"{message.guild.id}/{'positive'}.jpg") # Retrieve a response from s3 for the positive stored image
-            print(response)
             image_data = response['Body'].read() # Get the image data from the response body
             await message.reply(file=discord.File(io.BytesIO(image_data), filename='positive_image.png')) # Process the image data to be sent back
         except Exception as e: # Error occured with retrieving the image
