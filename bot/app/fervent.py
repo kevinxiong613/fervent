@@ -36,6 +36,10 @@ def upload_image_to_s3(guild_id, image_url, sentiment):
                 # Open the image using Pillow
             img = Image.open('app/temp_image.jpg')
 
+            # Convert image to RGB mode (if it's RGBA), it threw an error
+            if img.mode == 'RGBA':
+                img = img.convert('RGB')
+
             # Define the target width that I will be scaling it down to
             target_width = 300
 
