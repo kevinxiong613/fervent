@@ -1,5 +1,5 @@
-botinfo.txt
 app/run.py
 app/__pycache__
 AWSCLIV2.pkg
 tweets.csv
+tweets-cleaned.csv
