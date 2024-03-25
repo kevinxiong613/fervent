@@ -1,18 +1,24 @@
-import io
-import discord
+import io # Use this to help turn S3 bucket's response data back into an image to reply with
+import discord # Discord bot imports
 from discord import Intents
 from discord.ext import commands
-from run import run, getBucketName, getKeys
-from transformers import pipeline
+
+from run import run, getBucketName, getKeys # Get information
 import time # Keep track of the time
-import boto3
-import os
-import requests
-from PIL import Image
+import boto3 # Used for s3 access
+import os # Used to edit file system for images
+import requests # Use this to download the Discord image from the link given by the !setimage command
+from PIL import Image # Used to standardize image dimensions
+
+import pickle # Pickle to load Naive Bayes model
+from NaiveBayesModel import NaiveBayesClassifier # Import this to use the pickled object
 
 
 bot = commands.Bot(command_prefix="!", intents = Intents.all()) # Set the permissions that this bot will have, right now only need it to send messages
-sentiment_pipeline = pipeline(model="cardiffnlp/twitter-roberta-base-sentiment-latest") # Utilize roBERTa which was fine tuned on Twitter data
+file_path = 'naive_bayes_model.pkl'
+file_path = os.path.abspath(file_path)
+with open(file_path, 'rb') as f: # Load our custom trained Naive Bayes model with absolute path otherwise throws an error
+    naive_bayes = pickle.load(f)
 previous_time = 0 # Keep track of how much time it has been since this bot has last sent an image
 
 # Set up S3 client
@@ -109,9 +115,8 @@ async def on_message(message):
     if time.time() - previous_time < 2: # Not enough time has elapsed to send another image. Send an image every 50 seconds
         return
     previous_time = time.time() # Otherwise we can record the current time again and send the sentiment image
-    data = [message.content] # Put message contents in a list as the only item
-    prediction = sentiment_pipeline(data)
-    if prediction[0]['label'] == 'positive': # Set conditions to check what the prediction is
+    prediction = naive_bayes.predict(message.content) # Make a prediction
+    if prediction == 2: # Set conditions to check what the prediction is
         try:
             response = s3.get_object(Bucket=getBucketName(), Key=f"{message.guild.id}/{'positive'}.jpg") # Retrieve a response from s3 for the positive stored image
             image_data = response['Body'].read() # Get the image data from the response body
@@ -119,7 +124,7 @@ async def on_message(message):
         except Exception as e: # Error occured with retrieving the image
             print(f"Error retrieving image from S3: {e}")
             # Don't print anything in this case, typically means an image hasn't been uploaded for this sentiment yet
-    elif prediction[0]['label'] == 'negative': # If negative...
+    elif prediction == 0: # If negative...
         try:
             response = s3.get_object(Bucket=getBucketName(), Key=f"{message.guild.id}/{'negative'}.jpg")
             print(response)

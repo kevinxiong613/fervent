@@ -3,3 +3,8 @@ app/__pycache__
 AWSCLIV2.pkg
 tweets.csv
 tweets-cleaned.csv
+TD-IDF-explanation.png
+roberta.ipynb
+stop-words2.txt
+negative_tweets.json
+positive_tweets.json
