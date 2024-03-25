@@ -1,2 +1,9 @@
 /app/__pycache__
 botinfo.txt
+stop-words2.txt
+TD-IDF-explanation.png
+tweets-cleaned.csv
+tweets.csv
+accuracy
+inference_data.ipynb
+clean_data.ipynb

@@ -1,10 +1,13 @@
 # Use an official Python runtime as the base image, use slim for minimal packages
-FROM python:3.9-slim
+FROM python:3.9-alpine
 # Set the working directory in the container to where the code itself is
 WORKDIR /app
 
 # Copy the requirements file in this directory into the container, current working directory of the Docker container.
 COPY requirements.txt .
+COPY naive_bayes_model.pkl .
+COPY negation-words.txt .
+COPY stop-words.txt .
 
 # Install dependencies
 # --no-cache-dir: This option tells pip not to use the cache when installing packages. Using this option ensures that pip fetches the latest versions of packages and does not use any cached package information, which can sometimes lead to outdated or inconsistent installations.
