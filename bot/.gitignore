@@ -8,4 +8,6 @@ roberta.ipynb
 model-files/stop-words2.txt
 model-files/negative_tweets.json
 model-files/positive_tweets.json
-model-files/training_vectors.pkl
+model-files/tweets2.csv
+model-files/positive-cleaned.csv
+model-files/negative-cleaned.csv

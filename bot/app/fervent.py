@@ -18,7 +18,7 @@ nltk.download('wordnet') # Download these to be able to use WordNetLemmatizer an
 nltk.download('punkt')
 
 bot = commands.Bot(command_prefix="!", intents = Intents.all()) # Set the permissions that this bot will have, right now only need it to send messages
-file_path = 'model-files/naive_bayes_model.pkl' # Do ./app because I run my program from the bot folder
+file_path = 'app/naive_bayes_model.pkl' # Do ./app because I run my program from the bot folder
 file_path = os.path.abspath(file_path)
 print(file_path)
 with open(file_path, 'rb') as f: # Load our custom trained Naive Bayes model with absolute path otherwise throws an error
@@ -119,8 +119,11 @@ async def on_message(message):
     if time.time() - previous_time < 2: # Not enough time has elapsed to send another image. Send an image every 50 seconds
         return
     previous_time = time.time() # Otherwise we can record the current time again and send the sentiment image
-    prediction = naive_bayes.predict(message.content) # Make a prediction
-    if prediction == 2: # Set conditions to check what the prediction is
+    prediction, confidence = naive_bayes.predict(message.content) # Make a prediction
+    if abs(0.5 - confidence) < 0.05: # This is a neutral classification
+        prediction = "neutral"
+    print(prediction, confidence)
+    if prediction == "positive": # Set conditions to check what the prediction is
         try:
             response = s3.get_object(Bucket=getBucketName(), Key=f"{message.guild.id}/{'positive'}.jpg") # Retrieve a response from s3 for the positive stored image
             image_data = response['Body'].read() # Get the image data from the response body
@@ -128,7 +131,7 @@ async def on_message(message):
         except Exception as e: # Error occured with retrieving the image
             print(f"Error retrieving image from S3: {e}")
             # Don't print anything in this case, typically means an image hasn't been uploaded for this sentiment yet
-    elif prediction == 0: # If negative...
+    elif prediction == "negative": # If negative...
         try:
             response = s3.get_object(Bucket=getBucketName(), Key=f"{message.guild.id}/{'negative'}.jpg")
             print(response)

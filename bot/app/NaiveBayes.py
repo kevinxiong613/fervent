@@ -16,6 +16,12 @@ class NaiveBayesClassifier:
         self.positive_words = {}  # Word frequencies for each class
         self.negative_words = {}
 
+        self.positive_bigram_count = 0
+        self.negative_bigram_count = 0
+        self.positive_bigrams = {}
+        self.negative_bigrams = {}
+
+
     def clean(self, text):        
         # Convert to lowercase
         message = text.lower()
@@ -53,6 +59,13 @@ class NaiveBayesClassifier:
                 self.positive_words[splitted[j]] += 1
                 self.positive_word_count += 1
 
+                if j < len(splitted) - 1: # We can count bigrams
+                    self.positive_bigram_count += 1
+                    curr = splitted[j] + splitted[j+1]
+                    if curr not in self.positive_bigrams:
+                        self.positive_bigrams[curr] = 0
+                    self.positive_bigrams[curr] += 1
+
         for i in range(len(negative_text)):
             splitted = negative_text[i].split()
             for j in range(len(splitted)):
@@ -60,23 +73,57 @@ class NaiveBayesClassifier:
                     self.negative_words[splitted[j]] = 0
                 self.negative_words[splitted[j]] += 1
                 self.negative_word_count += 1
+
+                if j < len(splitted) - 1: # We can count bigrams
+                    self.negative_bigram_count += 1
+                    curr = splitted[j] + splitted[j+1]
+                    if curr not in self.negative_bigrams:
+                        self.negative_bigrams[curr] = 0
+                    self.negative_bigrams[curr] += 1
+
+        self.positive_word_count -= self.positive_words['URL']
+        self.negative_word_count -= self.negative_words['URL']
+        self.positive_words.pop('URL') # Two most common words for both categories, doesn't make sense
+        self.negative_words.pop('URL')
+        self.positive_words.pop('ã') 
+        self.negative_words.pop('ã')
     
     def predict(self, text): # VERY similar to data preprocessing, 1. Preprocess 2. Run inference based off the words
         tokens = self.clean(text) # Clean the message and get tokens in the form that we want
         pos_word_prob = 1
         neg_word_prob = 1
+        pos_bigram_prob = 1
+        neg_bigram_prob = 1
         for i in range(len(tokens)):
             if tokens[i] in self.positive_words and tokens[i] in self.negative_words: # If this word is in both, we can simply grab it from both
-                pos_word_prob *= self.positive_words[tokens[i]] / self.positive_word_count
-                neg_word_prob *= self.negative_words[tokens[i]] / self.negative_word_count
+                pos_word_prob *= (self.positive_words[tokens[i]] / self.positive_word_count)
+                neg_word_prob *= (self.negative_words[tokens[i]] / self.negative_word_count)
             elif tokens[i] in self.positive_words: # If it's only in one of them, need to pretend we saw one of this word in the negative or positive dataset
-                pos_word_prob *= self.positive_words[tokens[i]] / self.positive_word_count
-                neg_word_prob *= 1 / (self.negative_word_count + len(self.negative_words)) # Divide by negative_word_count + number of words because we're pretending for each negative word, we saw more than we actually did to scale with the current word we are pretending exists
+                pos_word_prob *= (self.positive_words[tokens[i]] / self.positive_word_count)
+                neg_word_prob *= (1 / (self.negative_word_count + len(self.negative_words))) # Divide by negative_word_count + number of words because we're pretending for each negative word, we saw more than we actually did to scale with the current word we are pretending exists
             elif tokens[i] in self.negative_words:
-                neg_word_prob *= self.negative_words[tokens[i]] / self.negative_word_count
-                pos_word_prob *= 1 / (self.positive_word_count + len(self.positive_words)) # Scale it up to the number of additions we need to "hallucinate"
-        final_pos = pos_word_prob
-        final_neg = neg_word_prob
+                neg_word_prob *= (self.negative_words[tokens[i]] / self.negative_word_count)
+                pos_word_prob *= (1 / (self.positive_word_count + len(self.positive_words))) # Scale it up to the number of additions we need to "hallucinate"
+
+            if i < len(tokens)-1:
+                curr = tokens[i] + tokens[i+1]
+                if curr in self.positive_bigrams and curr in self.negative_bigrams:
+                    pos_bigram_prob *= (self.positive_bigrams[curr] / self.positive_bigram_count)
+                    neg_bigram_prob *= (self.negative_bigrams[curr] / self.negative_bigram_count)
+                elif curr in self.positive_bigrams:
+                    pos_bigram_prob *= (self.positive_bigrams[curr] / self.positive_bigram_count)
+                    neg_bigram_prob *= (1 / (self.negative_bigram_count + len(self.negative_bigrams)))
+                elif curr in self.negative_bigrams:
+                    pos_bigram_prob *= (1 / (self.positive_bigram_count + len(self.positive_bigrams)))
+                    neg_bigram_prob *= (self.negative_bigrams[curr] / self.negative_bigram_count)
+                                            
+        final_pos = (pos_word_prob * 100) + (pos_bigram_prob * 100)
+        final_neg = (neg_word_prob* 100) + (neg_bigram_prob * 100)
+        if final_pos == 0 or final_neg == 0:
+            print(pos_word_prob)
+            print(pos_bigram_prob)
+            print(neg_word_prob)
+            print(neg_bigram_prob)
         text_split = text.split()
         negate = False
         if len(text_split) > 2 and (text_split[0] in self.negationwords or text_split[1] in self.negationwords): # Use my list of negation words to detect if the first couple of words are a word that negates the rest
@@ -87,9 +134,9 @@ class NaiveBayesClassifier:
         neg_likelihood = final_neg / (final_pos + final_neg)
         if final_pos > final_neg: 
             if negate: # If we found a negation word at the start, chances are simply relying on the word's probability won't cut it so negate the outcome. Ex: Don't be harsh on yourself vs. Be harsh on yourself will be distuinguished with this
-                return "negative", 1 - pos_likelihood
+                return "negative", pos_likelihood
             return "positive", pos_likelihood
         else:
             if negate:
-                return "positive", 1 - neg_likelihood
+                return "positive", neg_likelihood
             return "negative", neg_likelihood
