@@ -83,13 +83,13 @@ class NaiveBayesClassifier:
             negate = True
         if len(text_split) > 3 and text_split[2] in self.negationwords:
             negate = True
-        if abs(0.5 - final_pos / (final_pos + final_neg)) < 0.05: # If there's not too much of a difference simply deem it neutral
-            return 1
+        pos_likelihood = final_pos / (final_pos + final_neg)
+        neg_likelihood = final_neg / (final_pos + final_neg)
         if final_pos > final_neg: 
             if negate: # If we found a negation word at the start, chances are simply relying on the word's probability won't cut it so negate the outcome. Ex: Don't be harsh on yourself vs. Be harsh on yourself will be distuinguished with this
-                return 0
-            return 2
+                return "negative", 1 - pos_likelihood
+            return "positive", pos_likelihood
         else:
             if negate:
-                return 2
-            return 0    
+                return "positive", 1 - neg_likelihood
+            return "negative", neg_likelihood
