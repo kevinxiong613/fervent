@@ -3,11 +3,11 @@ from nltk.stem import WordNetLemmatizer # WordNetLemmatizer for the Naive Bayes 
 from nltk.tokenize import word_tokenize # Also for Naive Bayes model
 class NaiveBayesClassifier:
     def __init__(self):
-        with open("../stop-words.txt") as f:
+        with open("../model-files/stop-words.txt") as f:
             self.stopwords = [line.strip() for line in f]
         self.stopwords = set(self.stopwords) # Set of stop words to check against for the clean method for each prediction, keep in mind this model takes in cleaned data so should only be used for prediction
 
-        with open("../negation-words.txt") as f:
+        with open("../model-files/negation-words.txt") as f:
             self.negationwords = [line.strip() for line in f]
         self.negationwords = set(self.negationwords)
 

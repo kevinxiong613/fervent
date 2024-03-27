@@ -12,13 +12,13 @@ from PIL import Image # Used to standardize image dimensions
 
 import nltk
 import pickle # Pickle to load Naive Bayes model
-from NaiveBayesModel import NaiveBayesClassifier # Import this to use the pickled object
+from Models import NaiveBayesClassifier # Import this to use the pickled object
 
 nltk.download('wordnet') # Download these to be able to use WordNetLemmatizer and punkt
 nltk.download('punkt')
 
 bot = commands.Bot(command_prefix="!", intents = Intents.all()) # Set the permissions that this bot will have, right now only need it to send messages
-file_path = 'naive_bayes_model.pkl' # Do ./app because I run my program from the bot folder
+file_path = 'model-files/naive_bayes_model.pkl' # Do ./app because I run my program from the bot folder
 file_path = os.path.abspath(file_path)
 print(file_path)
 with open(file_path, 'rb') as f: # Load our custom trained Naive Bayes model with absolute path otherwise throws an error

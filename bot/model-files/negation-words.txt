@@ -24,6 +24,8 @@ arent
 hasn't
 hasnt
 haven't
+isn't
+isnt
 havent
 hadn't
 hadnt
