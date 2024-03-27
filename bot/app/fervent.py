@@ -12,7 +12,7 @@ from PIL import Image # Used to standardize image dimensions
 
 import nltk
 import pickle # Pickle to load Naive Bayes model
-from Models import NaiveBayesClassifier # Import this to use the pickled object
+from NaiveBayes import NaiveBayesClassifier # Import this to use the pickled object
 
 nltk.download('wordnet') # Download these to be able to use WordNetLemmatizer and punkt
 nltk.download('punkt')
