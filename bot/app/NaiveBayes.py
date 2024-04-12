@@ -83,6 +83,8 @@ class NaiveBayesClassifier:
 
         self.positive_word_count -= self.positive_words['URL']
         self.negative_word_count -= self.negative_words['URL']
+        self.positive_word_count -= self.positive_words['ã']
+        self.negative_word_count -= self.negative_words['ã']
         self.positive_words.pop('URL') # Two most common words for both categories, doesn't make sense
         self.negative_words.pop('URL')
         self.positive_words.pop('ã') 
@@ -116,14 +118,11 @@ class NaiveBayesClassifier:
                 elif curr in self.negative_bigrams:
                     pos_bigram_prob *= (1 / (self.positive_bigram_count + len(self.positive_bigrams)))
                     neg_bigram_prob *= (self.negative_bigrams[curr] / self.negative_bigram_count)
-                                            
-        final_pos = (pos_word_prob * 100) + (pos_bigram_prob * 100)
-        final_neg = (neg_word_prob* 100) + (neg_bigram_prob * 100)
-        if final_pos == 0 or final_neg == 0:
-            print(pos_word_prob)
-            print(pos_bigram_prob)
-            print(neg_word_prob)
-            print(neg_bigram_prob)
+        if pos_bigram_prob == 1 or neg_bigram_prob == 1: # If we couldn't find any, just base it solely off the words themself
+            pos_bigram_prob = 0
+            neg_bigram_prob = 0
+        final_pos = (pos_word_prob * 100) + pos_bigram_prob * 40
+        final_neg = (neg_word_prob * 100) + neg_bigram_prob * 40
         text_split = text.split()
         negate = False
         if len(text_split) > 2 and (text_split[0] in self.negationwords or text_split[1] in self.negationwords): # Use my list of negation words to detect if the first couple of words are a word that negates the rest
