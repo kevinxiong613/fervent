@@ -12,3 +12,4 @@ model-files/tweets2.csv
 model-files/positive-cleaned.csv
 model-files/negative-cleaned.csv
 tweets3.csv
+app/naive_bayes_model.pkl
